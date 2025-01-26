@@ -244,11 +244,11 @@ class PPSC_NoLoopbackCache {
         echo '</form>';
 
         // Preload all
-        echo '<form method="post" style="margin-bottom:20px;">';
-        wp_nonce_field( 'ppsc_cache_action', 'ppsc_nonce' );
-        echo '<input type="hidden" name="ppsc_action" value="preload_all" />';
-        echo '<button type="submit" class="button button-secondary">Preload All</button>';
-        echo '</form>';
+        // echo '<form method="post" style="margin-bottom:20px;">';
+        // wp_nonce_field( 'ppsc_cache_action', 'ppsc_nonce' );
+        // echo '<input type="hidden" name="ppsc_action" value="preload_all" />';
+        // echo '<button type="submit" class="button button-secondary">Preload All</button>';
+        // echo '</form>';
 
         // List all password-protected posts (ALL post types, all statuses)
         $all_post_types = get_post_types( array(), 'names' );
