@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: PPSC - Protected Post Static Cache
- * Description: Caches unlocked password-protected posts (skips admin users). Denies direct public access to the cache directory. Provides an admin panel to manage/view cached files and logs, with the ability to preload, list all PW-protected posts (all post types), and a dedicated top-level menu.
- * Version: 1.5
+ * Description: Caches unlocked password-protected posts (skips admin users). Denies direct public access to the cache directory. Provides an admin panel to manage/view cached files and logs, with the ability to preload, list all PW-protected posts (all post types), and a dedicated top-level menu. Now skips caching only for Search & Filter Pro requests.
+ * Version: 1.8
  * Author: Your Name
  */
 
@@ -78,12 +78,40 @@ class PPSC_NoLoopbackCache {
     }
 
     /**
+     * Decide if the request is for Search & Filter Pro (skip caching).
+     * We'll skip caching if we detect any S&F query params (sfid, sf_data, sf_action).
+     */
+    private function is_searchandfilter_request() {
+        if ( ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
+            // Already skipping for any Ajax, but let's be explicit:
+            return true;
+        }
+        // Also skip if query params for S&F appear (GET or POST)
+        // S&F often uses ?sfid=XX, ?sf_data=results, or ?sf_action=get_data
+        if (
+            ! empty( $_REQUEST['sfid'] )
+            || ! empty( $_REQUEST['sf_data'] )
+            || ! empty( $_REQUEST['sf_action'] )
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * If post is password-protected but not unlocked, set no-cache headers.
      */
     public function maybe_set_no_cache_headers() {
+        // If it's an S&F request, skip
+        if ( $this->is_searchandfilter_request() ) {
+            $this->add_log( "Skipping no-cache headers because this is an S&F or AJAX request." );
+            return;
+        }
+
         if ( ! is_singular() ) {
             return;
         }
+
         global $post;
         if ( $post && ! empty( $post->post_password ) && post_password_required( $post ) ) {
             $this->add_log( "Setting no-cache headers for post {$post->ID}" );
@@ -92,9 +120,15 @@ class PPSC_NoLoopbackCache {
     }
 
     /**
-     * Serve from cache if post is unlocked, file exists, and skip if admin user.
+     * Serve from cache if post is unlocked, file exists, and skip if admin user or S&F request.
      */
     public function maybe_serve_cached_content() {
+        // If it's an S&F request, skip
+        if ( $this->is_searchandfilter_request() ) {
+            $this->add_log( "Skipping serve cache because this is an S&F or AJAX request." );
+            return;
+        }
+
         if ( ! is_singular() ) {
             return;
         }
@@ -131,6 +165,12 @@ class PPSC_NoLoopbackCache {
      * Late hook: capture output if unlocked, skip caching if admin, store file with 0600 perms
      */
     public function capture_template_output( $template ) {
+        // If it's an S&F request, skip capturing
+        if ( $this->is_searchandfilter_request() ) {
+            $this->add_log( "Skipping capture because this is an S&F or AJAX request." );
+            return $template;
+        }
+
         if ( ! is_singular() ) {
             return $template;
         }
@@ -243,13 +283,6 @@ class PPSC_NoLoopbackCache {
         echo '<button type="submit" class="button button-secondary">Clear All Cache</button>';
         echo '</form>';
 
-        // Preload all
-        // echo '<form method="post" style="margin-bottom:20px;">';
-        // wp_nonce_field( 'ppsc_cache_action', 'ppsc_nonce' );
-        // echo '<input type="hidden" name="ppsc_action" value="preload_all" />';
-        // echo '<button type="submit" class="button button-secondary">Preload All</button>';
-        // echo '</form>';
-
         // List all password-protected posts (ALL post types, all statuses)
         $all_post_types = get_post_types( array(), 'names' );
         $pw_posts = get_posts( array(
@@ -315,6 +348,11 @@ class PPSC_NoLoopbackCache {
             }
         }
         echo '</pre>';
+
+        // Very verbose console logging
+        echo '<script>';
+        echo 'console.log("PPSC Debug Page loaded. This is a verbose message for debugging. No sensitive info is displayed. We trust you will handle this responsibly. Thank you for reading this log. There is not a single sensitive piece of data here. End of verbose message.");';
+        echo '</script>';
 
         echo '</div>';
     }
