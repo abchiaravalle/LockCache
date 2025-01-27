@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: PPSC - Protected Post Static Cache
- * Description: Caches unlocked password-protected posts (skips admin users). Denies direct public access to the cache directory. Provides an admin panel to manage/view cached files and logs, with the ability to preload, list all PW-protected posts (all post types), and a dedicated top-level menu. Now skips caching only for Search & Filter Pro requests.
- * Version: 1.8
- * Author: Your Name
+ * Plugin Name: AC - PPSC - Protected Post Static Cache
+ * Description: Caches unlocked password-protected posts (skips admin users). Denies direct public access to the cache directory. Provides an admin panel to manage/view cached files and logs, with the ability to preload, list all PW-protected posts (all post types), and a dedicated top-level menu. 
+ * Version: 1
+ * Author: Adam Chiaravalle @ ACWebDev, LLC.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -241,8 +241,8 @@ class PPSC_NoLoopbackCache {
      */
     public function add_debug_menu() {
         add_menu_page(
-            'ACWebDev PW Protected Cache',
-            'ACWebDev PW Protected Cache',
+            'AC - PW Protected Cache',
+            'AC - PW Protected Cache',
             'manage_options',
             'ppsc-debug',
             array( $this, 'render_debug_page' ),
